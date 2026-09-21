@@ -1,0 +1,19 @@
+{
+  "name": "FollowUp - WhatsApp Mini-CRM",
+  "short_name": "FollowUp",
+  "description": "Simple WhatsApp Mini-CRM for Indian Local Service Businesses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#064e3b",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

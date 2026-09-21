@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#022c22" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <!-- Rounded Squircle Base -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#grad)" filter="url(#shadow)" />
+  
+  <!-- WhatsApp / FollowUp Speech Bubble -->
+  <path d="M256 128C185.3 128 128 185.3 128 256C128 280.9 135.2 304.2 147.6 323.8L132 380L189.9 364.8C209 376.6 231.7 384 256 384C326.7 384 384 326.7 384 256C384 185.3 326.7 128 256 128Z" fill="#FFFFFF" opacity="0.96"/>
+  
+  <!-- Emerald Checkmark inside Bubble -->
+  <path d="M220 286L182 248C176 242 166 242 160 248C154 254 154 264 160 270L209 319C215 325 225 325 231 319L352 198C358 192 358 182 352 176C346 170 336 170 330 176L220 286Z" fill="#059669"/>
+</svg>
