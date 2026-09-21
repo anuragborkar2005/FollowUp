@@ -39,10 +39,10 @@ export default async function AppointmentsPage() {
     }),
   ]);
 
-  const formattedAppointments = appointmentsRaw.map((a) => ({
+  const formattedAppointments = appointmentsRaw.map((a: any) => ({
     id: a.id,
     serviceName: a.serviceName,
-    startTime: a.startTime.toISOString(),
+    startTime: new Date(a.startTime).toISOString(),
     price: Number(a.price),
     status: a.status,
     notes: a.notes,
@@ -53,7 +53,7 @@ export default async function AppointmentsPage() {
     },
   }));
 
-  const formattedTemplates = templatesRaw.map((t) => ({
+  const formattedTemplates = templatesRaw.map((t: any) => ({
     id: t.id,
     title: t.title,
     category: t.category,

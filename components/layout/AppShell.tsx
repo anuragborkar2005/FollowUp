@@ -32,7 +32,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     });
 
     pendingFollowups = followups.length;
-    overdueFollowups = followups.filter((f) => f.dueDate < now).length;
+    overdueFollowups = followups.filter((f: any) => new Date(f.dueDate) < now).length;
   }
 
   return (

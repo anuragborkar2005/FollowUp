@@ -44,10 +44,10 @@ export default async function FollowupsPage() {
     }),
   ]);
 
-  const formattedFollowups = followupsRaw.map((f) => ({
+  const formattedFollowups = followupsRaw.map((f: any) => ({
     id: f.id,
     title: f.title,
-    dueDate: f.dueDate.toISOString(),
+    dueDate: new Date(f.dueDate).toISOString(),
     priority: f.priority,
     status: f.status,
     notes: f.notes,
@@ -59,7 +59,7 @@ export default async function FollowupsPage() {
     },
   }));
 
-  const formattedTemplates = templatesRaw.map((t) => ({
+  const formattedTemplates = templatesRaw.map((t: any) => ({
     id: t.id,
     title: t.title,
     category: t.category,

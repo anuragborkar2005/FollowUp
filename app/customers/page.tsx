@@ -36,7 +36,7 @@ export default async function CustomersPage() {
     }),
   ]);
 
-  const formattedCustomers = customersRaw.map((c) => ({
+  const formattedCustomers = customersRaw.map((c: any) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,
@@ -45,11 +45,11 @@ export default async function CustomersPage() {
     pendingBalance: Number(c.pendingBalance),
     notes: c.notes,
     tags: c.tags,
-    nextFollowupDate: c.followups?.[0]?.dueDate.toISOString() || null,
+    nextFollowupDate: c.followups?.[0]?.dueDate ? new Date(c.followups[0].dueDate).toISOString() : null,
     nextFollowupTitle: c.followups?.[0]?.title || null,
   }));
 
-  const formattedTemplates = templatesRaw.map((t) => ({
+  const formattedTemplates = templatesRaw.map((t: any) => ({
     id: t.id,
     title: t.title,
     category: t.category,

@@ -47,7 +47,7 @@ export default async function PaymentsPage() {
     }),
   ]);
 
-  const formattedPayments = paymentsRaw.map((p) => ({
+  const formattedPayments = paymentsRaw.map((p: any) => ({
     id: p.id,
     invoiceNumber: p.invoiceNumber,
     totalAmount: Number(p.totalAmount),
@@ -55,7 +55,7 @@ export default async function PaymentsPage() {
     pendingAmount: Number(p.pendingAmount),
     status: p.status,
     paymentMethod: p.paymentMethod,
-    paidAt: p.paidAt.toISOString(),
+    paidAt: new Date(p.paidAt).toISOString(),
     notes: p.notes,
     customer: {
       id: p.customer.id,
@@ -64,14 +64,14 @@ export default async function PaymentsPage() {
     },
   }));
 
-  const formattedTemplates = templatesRaw.map((t) => ({
+  const formattedTemplates = templatesRaw.map((t: any) => ({
     id: t.id,
     title: t.title,
     category: t.category,
     body: t.body,
   }));
 
-  const formattedCustomers = customersRaw.map((c) => ({
+  const formattedCustomers = customersRaw.map((c: any) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,

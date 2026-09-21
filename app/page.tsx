@@ -105,7 +105,7 @@ export default async function Page() {
     }),
   ]);
 
-  const overdueCount = allPendingFollowups.filter((f) => f.dueDate < now).length;
+  const overdueCount = allPendingFollowups.filter((f: any) => new Date(f.dueDate) < now).length;
   const pendingReceivables = Number(customersAggregate._sum.pendingBalance || 0);
   const revenueThisMonth = Number(monthlyPayments._sum.paidAmount || 0);
 
@@ -118,11 +118,11 @@ export default async function Page() {
     revenueThisMonth,
   };
 
-  const formattedFollowups = todayFollowupsRaw.map((f) => ({
+  const formattedFollowups = todayFollowupsRaw.map((f: any) => ({
     id: f.id,
     title: f.title,
     notes: f.notes,
-    dueDate: f.dueDate.toISOString(),
+    dueDate: new Date(f.dueDate).toISOString(),
     priority: f.priority,
     status: f.status,
     customer: {
@@ -133,7 +133,7 @@ export default async function Page() {
     },
   }));
 
-  const formattedCustomers = recentCustomersRaw.map((c) => ({
+  const formattedCustomers = recentCustomersRaw.map((c: any) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,
@@ -144,7 +144,7 @@ export default async function Page() {
     tags: c.tags,
   }));
 
-  const formattedTemplates = templatesRaw.map((t) => ({
+  const formattedTemplates = templatesRaw.map((t: any) => ({
     id: t.id,
     title: t.title,
     category: t.category,

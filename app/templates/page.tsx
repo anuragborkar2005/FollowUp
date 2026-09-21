@@ -21,7 +21,7 @@ export default async function TemplatesPage() {
     orderBy: { isDefault: 'desc' },
   });
 
-  const formattedTemplates = templatesRaw.map((t) => ({
+  const formattedTemplates = templatesRaw.map((t: any) => ({
     id: t.id,
     title: t.title,
     category: t.category,
