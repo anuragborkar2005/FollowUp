@@ -1,184 +1,249 @@
-# Product Requirements & Technical Architecture Document (PRD + TRD)
+# Product Requirements Document (PRD) & Technical Architecture Spec
 ## FollowUp — WhatsApp Mini-CRM for Local Service Businesses
-**Document Version:** 1.0.0 (MVP Release Specification)  
-**Target Market:** Indian Local Service Businesses (Salons, Clinics, Repair Shops, Tailors, Tutors)  
-**Primary Currency:** INR (₹)  
-**Author / Role:** Full-Stack Lead Engineer & Product Architect  
+
+**Document Version:** 1.0.0-PROD-MVP  
 **Status:** Approved for Implementation  
+**Target Market:** Indian Local Service Businesses (Tier 1 to Tier 3)  
+**Launch Niche:** Salons, Barbers, Repair Technicians, Tutors, Tailors, Clinics  
+**Tech Stack:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, PostgreSQL, Prisma ORM, Redis / BullMQ, Razorpay  
+**Currency:** INR (₹)  
+**Primary Communication Channel:** WhatsApp (Native Deep Links & Web App Links)
 
 ---
 
-## 1. Executive Summary & Vision
+## 1. Executive Summary & Product Vision
 
-### 1.1 The Core Problem
-Over 60 million micro and small service businesses in India run their daily operations through an informal, fragile combination of WhatsApp personal chats, paper diaries, phone contacts, Excel sheets, and memory.
-* **Leads & Follow-ups slip through the cracks:** A salon owner gets 20 WhatsApp inquiries a day, promises to call back on Wednesday, and completely forgets.
-* **Pending Khata (Uncollected Dues):** Customers receive service with "pay online later", leading to ₹15,000–₹50,000 in untracked, uncollected receivables per shop.
-* **Context Loss:** Owners and staff have no unified timeline of past customer visits, preferred services, or notes.
-* **Enterprise CRMs Fail:** Salesforce, HubSpot, or Zoho are too expensive, English-centric, desktop-oriented, and overly complex for a 2-to-5-person local business.
+### 1.1 Problem Statement
+India's 60+ million micro and small service businesses run their entire customer operations on fragmented tools:
+* WhatsApp chats for enquiries, booking, and reminders.
+* Paper diaries, pocket notebooks, or raw memory for customer records.
+* Disorganized UPI screenshots and loose scraps for pending payments (Khata/Udhar).
+* Lost follow-ups: 40–60% of potential repeat business is lost simply because the owner forgets to follow up 2–4 weeks later.
+* Enterprise CRMs (Salesforce, HubSpot, Zoho) are bloated, desktop-centric, cost-prohibitive, and overwhelmingly complex for a local salon or repair shop owner.
 
-### 1.2 Product Vision: "WhatsApp + Digital Notebook"
-**FollowUp** is an ultra-lean, mobile-first web CRM designed specifically for Indian service SMBs. It transforms unstructured WhatsApp chats into an organized system of customer records, timely follow-up reminders, scheduled appointments, and pending payment trackers with zero enterprise bloat.
+### 1.2 Product Vision
+**FollowUp** is the **"WhatsApp + Digital Pocket Notebook" CRM**. It empowers non-tech-savvy local business owners to capture leads, track appointments, schedule follow-ups, and collect pending payments in under 3 taps—triggering pre-filled WhatsApp conversations with zero friction and zero initial Meta API setup costs.
 
-### 1.3 Guiding Product Principles
-1. **Zero-API WhatsApp Simplicity:** Do not force small businesses to buy expensive Meta WhatsApp Business Cloud APIs or verify Facebook Business Managers for MVP. Use zero-friction `wa.me` deep links with pre-compiled dynamic templates.
-2. **Mobile-First Touch Ergonomics:** 95% of users will use this on low-to-mid-range Android smartphones while standing in a busy shop. Every critical action must be reachable within 1 tap of the thumb.
-3. **Sub-3-Minute Time-to-Value:** From landing on the site to importing contacts and sending the first follow-up reminder must take under 3 minutes.
-4. **Ruthless Scope Discipline:** No inventory, no payroll, no complex accounting. If a feature does not directly help "remember and follow up with a customer", it is strictly out of scope for v1.
+```
+       ┌────────────────────────────────────────────────────────┐
+       │                   FollowUp Vision                      │
+       │  "As simple as WhatsApp, as organized as a notebook"  │
+       └────────────────────────────────────────────────────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          ▼                         ▼                         ▼
+   [ Fast Data Entry ]       [ Zero-API WhatsApp ]      [ Payment Tracking ]
+   Tap-and-save records       1-Click pre-filled chat    Track Khata / Udhar
+   Mobile-optimized UI        No Meta API hurdles        Instant UPI reminders
+```
 
 ---
 
-## 2. Personas & Workflows
+## 2. Target Personas & User Journeys
 
 ### 2.1 Personas
-* **Primary Persona: Rahul (Shop Owner / Operator)**
-  * *Age:* 32 | *Business:* Rahul Men's Grooming Salon, Nagpur | *Staff:* 3 barbers
-  * *Daily Context:* Busy on the floor cutting hair; handles appointments via WhatsApp while answering phone calls.
-  * *Core Frustration:* *"I lose ₹5,000 every week because people say 'bhaiya kal aayenge' and I forget to message them. By evening my WhatsApp chat list is buried under 150 personal messages."*
-* **Secondary Persona: Amit (Senior Stylist / Staff Member)**
-  * *Context:* Needs to know who is coming today, what service they want, and note if they still owe ₹300.
-  * *Access:* Limited to viewing today's appointments, adding notes, marking follow-ups done, and recording payments.
 
-### 2.2 End-to-End User Journey
-```
-[Customer chats on WhatsApp] 
-         ↓
-[Owner opens FollowUp mobile web / PWA]
-         ↓
-[Quick Add: Name + 10-digit Phone + Note: "Wants hair spa on Friday"]
-         ↓
-[Create Follow-up for Friday 10:00 AM]
-         ↓
-[Friday 09:30 AM: System Alert on Dashboard]
-         ↓
-[Tap "Open WhatsApp" → Auto-launches WhatsApp with pre-filled personalized message]
-         ↓
-[Customer confirms → Tap "Mark Booked" → Create Appointment]
-         ↓
-[Customer visits → Tap "Record Payment" (Paid ₹800, Pending ₹200)]
-         ↓
-[System queues automated Follow-up for pending ₹200 in 3 days]
+| Attribute | Primary Persona: Shop Owner (Rahul) | Secondary Persona: Employee / Staff (Amit) |
+| :--- | :--- | :--- |
+| **Profile** | Rahul, 32. Runs "Rahul Men's Salon" in Nagpur. 2 staff members. | Amit, 24. Senior hair stylist at Rahul's salon. |
+| **Tech Literacy** | High familiarity with WhatsApp, YouTube, PhonePe/GooglePay. Dislikes complex desktop software. | Uses smartphone for personal WhatsApp and Instagram. |
+| **Current Tool** | Paper diary at the cash register + WhatsApp chat list. | Asks Rahul who is booked next; receives customer notes verbally. |
+| **Pain Points** | • Forgets clients who promised to visit next weekend.<br>• Unpaid balances forgotten unless manually scrolled in WhatsApp.<br>• Staff don't have customer preference notes (e.g. hair dye brand). | • Doesn't know the day's schedule ahead of time.<br>• Awkwardness following up on pending customer balances. |
+| **Value Sought** | Daily 2-minute morning scan: "Who do I need to message or call today?" | Simple daily task list: "Who are my appointments today?" |
+
+### 2.2 Core User Journey (The "Golden Loop")
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+    actor Owner as Shop Owner (Rahul)
+    participant CRM as FollowUp Web App
+    participant WA as WhatsApp App
+
+    Customer->>Owner: WhatsApp Message / Walk-in: "Bhaiya, haircut package available?"
+    Owner->>CRM: Quick Add: Name, Phone (+91), Tag: "Haircut Package"
+    CRM-->>Owner: Saved. Suggests Follow-up for Tomorrow 11:00 AM
+    Note over CRM: Overnight: Follow-up becomes due
+    CRM-->>Owner: In-App Badge: "1 Follow-up due with Amit Sharma"
+    Owner->>CRM: Taps [Open WhatsApp] button on Follow-up Card
+    CRM->>WA: Deep-links: wa.me/919876543210?text=Pre-filled+Hindi/English+Template
+    WA-->>Customer: Sends reminder directly from Owner's personal/business WhatsApp
+    Customer->>Owner: Customer replies & books for 4:00 PM
+    Owner->>CRM: Updates status to "Booked" & adds ₹500 advance
+    CRM-->>Owner: Updates Dashboard Revenue & Pending Ledger
 ```
 
 ---
 
-## 3. Product Features & Detailed Specifications
+## 3. Product Scope & Non-Goals
 
-### 3.1 Authentication & Multi-Tenant Onboarding
-* **Auth Modes:** Email + Password with secure session cookies (NextAuth / Auth.js / Supabase Auth).
-* **Multi-Tenancy:** Strict tenant boundary (`organization_id`). A business is created upon signup. All queries are scoped to the authenticated tenant.
-* **Onboarding Wizard (< 3 minutes):**
-  1. *Business Details:* Business Name, Category (Salon, Clinic, Tailor, Repair, Tutor, Other), City, Currency (Default ₹ INR).
-  2. *Quick Contact Import:* [Upload CSV] or [Quick Add First 3 Customers] or [Skip].
-  3. *Immediate First Action:* Prompt to set up their very first follow-up reminder.
+### 3.1 In-Scope for MVP (v1.0)
+1. **Multi-Tenant Foundation:** Strict database-level isolation per business (`organization_id`).
+2. **Fast Onboarding:** 3-step setup in < 180 seconds.
+3. **Customer Directory:** Mobile-first list, fast search, tag filtering, CSV bulk import/export.
+4. **Customer 360 Profile:** Complete chronological activity log, total lifetime value, balance pending.
+5. **Follow-Up Engine:** Date/time scheduler, priority tiers, status progression, daily agenda view.
+6. **Appointment Tracker:** Daily/weekly view, service type, time slot, assigned staff member.
+7. **Pending Payment & Khata Ledger:** Total billed, amount received, pending balance, payment modes (UPI, Cash, Card).
+8. **WhatsApp Action Engine:** Pre-filled template generation, phone number normalization (+91 India E.164), 1-tap `wa.me` deep linking.
+9. **Message Template Manager:** Customizable templates with variables (`{{customer_name}}`, `{{business_name}}`, `{{amount}}`, `{{date}}`, etc.).
+10. **Role-Based Access Control (RBAC):** Owner (full control & billing), Admin, Employee (restricted to assigned operations).
+11. **In-App Notification Bar & Daily Task Digest.**
+12. **Monetization Engine:** Razorpay subscription checkout for Starter (₹299/mo) and Business (₹699/mo).
 
-### 3.2 Command Center Dashboard
-* **Real-time KPI Ribbon:**
-  * `Total Customers`: Count of active profiles.
-  * `Due Follow-ups`: Badge highlighting overdue + today's pending follow-ups.
-  * `Today's Appointments`: Total scheduled for current date.
-  * `Pending Khata (₹)`: Total uncollected receivables across all customers.
-* **Today's Action Feed:**
-  * Chronological cards of actions due today.
-  * Each card has: Customer Name, Phone, Time, Priority Badge (High/Medium/Low), Context note, and one-tap `[WhatsApp]` and `[Done]` buttons.
-* **Recent Activity Feed:** Latest 10 customer interactions (notes, payments received, appointments booked).
+### 3.2 Explicit Non-Goals (Out of Scope for v1.0)
+* ❌ **Official WhatsApp Business Cloud API:** No webhook servers, message templates approval, or per-conversation Meta fees in MVP.
+* ❌ **Full Double-Entry Accounting / GST Filing:** Only lightweight cash & pending balance tracking.
+* ❌ **Inventory & Stock Management:** No SKU tracking or barcode scanning.
+* ❌ **Native Android / iOS Binaries:** Web-first responsive PWA optimized for Chrome/Safari on mobile.
+* ❌ **AI Conversational Bots:** Human-driven messages; no autonomous bot replying.
+* ❌ **Multi-Currency / Multi-Country Localization:** India-exclusive (+91 phone numbers and INR ₹ currency).
 
-### 3.3 Customer Management (360° Profile)
-* **Customer List View:**
-  * Search by Name, 10-digit Phone, or Note keywords.
-  * Quick filter pills: `All`, `Follow-up Due`, `Pending Payment`, `Active`, `VIP`.
-  * CSV Bulk Import (Name, Phone, Email, Initial Notes, Outstanding Balance) with client-side validation for Indian phone formats.
-  * CSV Export for merchant data portability.
-* **Customer Profile Screen (Core Workspace):**
-  * Header: Customer Name, Normalized Phone, Status Pill (`New`, `Contacted`, `Booked`, `Active`, `Completed`, `Follow-up`, `Lost`), Lifetime Revenue, Current Pending Dues.
-  * Quick Action Floating Bar:
-    * `[WhatsApp]`: Opens modal to select template and launch chat.
-    * `[Call]`: Triggers `tel:+91XXXXXXXXXX`.
-    * `[+ Follow-up]`: Opens quick follow-up drawer.
-    * `[+ Appointment]`: Schedules service date & time.
-    * `[+ Payment]`: Logs amount received and updates pending balance.
-    * `[+ Note]`: Adds quick text note with timestamp.
-  * Unified Activity Timeline: Reverse-chronological feed showing appointments, payments, follow-ups, and notes.
+---
 
-### 3.4 Follow-Up Management (The Core Retention Engine)
-* **Creation Fields:**
-  * Customer ID (linked)
-  * Title / Purpose (e.g., "Confirm weekend appointment", "Follow up on bridal inquiry", "Collect balance ₹500")
-  * Due Date & Time
-  * Priority: `URGENT`, `HIGH`, `MEDIUM`, `LOW`
-  * Reminder Lead Time: 15 min, 30 min, 1 hour, 1 day prior
-* **Lifecycle:** `PENDING` → `COMPLETED` | `CANCELLED` | `RESCHEDULED`
-* **Overdue System:** Follow-ups past their scheduled time display an amber/red overdue badge and float to the top of the dashboard feed.
+## 4. Functional Specifications & UX Wireframes
 
-### 3.5 Appointments & Service Scheduling
-* **Fields:** Customer, Service Name (e.g., "Haircut + Beard Styling"), Scheduled Date, Scheduled Time, Duration (minutes), Assigned Staff Member, Price, Status (`SCHEDULED`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`).
+### 4.1 Authentication & Multi-Tenant Onboarding
+* **Sign Up / Login:** Email & Password (with Bcrypt hashing) + Session cookie. (Google Auth & Phone OTP ready in v1.1).
+* **Onboarding Wizard (3 Minutes max):**
+  1. *Business Identity:* Business Name (e.g. "Apex Auto Garage"), Business Category (Dropdown: Salon, Barbershop, Repair Shop, Tuition/Coach, Tailor, Clinic, Other), City (e.g. Nagpur, Pune, Jaipur).
+  2. *Initial Customer Population:* Option to [Upload CSV] or [Add 1 Customer Manually] or [Use Sample Demo Data].
+  3. *Immediate Activation Hook:* "Create your first follow-up reminder for tomorrow."
+
+### 4.2 Executive Dashboard (`/dashboard`)
+* **KPI Metrics Bar:**
+  * `Active Customers` (Total count + delta this month).
+  * `Follow-ups Today` (Pending count / Overdue highlight in Amber/Red).
+  * `Appointments Today` (Count scheduled).
+  * `Pending Khata (₹)` (Total uncollected revenue in INR).
+* **Today's Action Feed (Chronological):**
+  ```text
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │ 🔔 TODAY'S FOLLOW-UPS (3 DUE)                                          │
+  ├────────────────────────────────────────────────────────────────────────┤
+  │ [10:30 AM]  Rahul Verma  •  Hair Spa Follow-up                         │
+  │ Note: Asked to confirm if weekend slot is required.                    │
+  │ [💬 WhatsApp]   [📞 Call]   [✓ Mark Done]   [↷ Reschedule]             │
+  ├────────────────────────────────────────────────────────────────────────┤
+  │ [02:00 PM]  Dr. Anjali Patil  •  Pending Payment (₹1,200)             │
+  │ Note: Tailoring balance pending since 3 days.                          │
+  │ [💬 Send Payment Reminder]  [₹ Record Cash]  [✓ Settled]               │
+  └────────────────────────────────────────────────────────────────────────┘
+  ```
+* **Recent Customers Table:** Last contacted date, status pill, pending balance, quick actions.
+
+### 4.3 Customer Management & Customer 360 Profile (`/customers/:id`)
+* **List View:**
+  * Quick search bar (name, phone number, note text).
+  * Filter pills: `All`, `Active`, `Follow-up Due`, `Pending Payment`, `Completed`.
+  * Bulk Actions: CSV Import (with validation preview) and CSV Export.
+* **Customer 360 View:**
+  ```text
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │ ← Back to Customers                                                    │
+  │                                                                        │
+  │ RAHUL SHARMA                             [ STATUS: ACTIVE ]            │
+  │ 📞 +91 98230 12345 (Nagpur)              Total Spent: ₹4,500           │
+  │ 🏷️ VIP Client, Regular Haircut           Pending Due: ₹500 (⚠️ Khata)  │
+  ├────────────────────────────────────────────────────────────────────────┤
+  │ QUICK ACTIONS:                                                         │
+  │ [💬 Open WhatsApp] [📞 Call] [+ Follow-up] [+ Appointment] [+ Payment] │
+  ├────────────────────────────────────────────────────────────────────────┤
+  │ TIMELINE & HISTORY                                                     │
+  │ • 21 Sep 2026, 04:30 PM — Payment of ₹1,000 received (UPI). ₹500 due. │
+  │ • 21 Sep 2026, 03:30 PM — Appointment completed: "Keratin Treatment"   │
+  │ • 19 Sep 2026, 11:00 AM — WhatsApp reminder sent via FollowUp         │
+  │ • 15 Sep 2026, 02:00 PM — Customer added to CRM                       │
+  └────────────────────────────────────────────────────────────────────────┘
+  ```
+
+### 4.4 Follow-Up Management (`/followups`)
+* **Core Data Fields:** `customer_id`, `title`, `scheduled_at`, `priority` (`LOW`, `MEDIUM`, `HIGH`), `status` (`PENDING`, `COMPLETED`, `CANCELLED`), `notes`.
+* **State Machine:**
+  ```mermaid
+  stateDiagram-v2
+      [*] --> PENDING: Created with Date & Time
+      PENDING --> COMPLETED: Owner clicks [Mark Done]
+      PENDING --> RESCHEDULED: Owner changes Date/Time
+      PENDING --> CANCELLED: Dismissed / Irrelevant
+      RESCHEDULED --> PENDING: Updates Schedule
+      COMPLETED --> [*]
+      CANCELLED --> [*]
+  ```
+* **Overdue Trigger:** Any follow-up where `scheduled_at < NOW()` and `status == 'PENDING'` receives high-visibility warning badge.
+
+### 4.5 Appointments & Services (`/appointments`)
+* **Fields:** `customer_id`, `service_name`, `start_time`, `end_time`, `assigned_to` (Staff Member ID), `notes`, `status` (`SCHEDULED`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`).
 * **Views:**
-  * Agenda List View (Default for mobile).
-  * Day / Week Calendar view (Tablet / Desktop).
+  1. *Compact Agenda List* (Default for mobile phone screen).
+  2. *7-Day Calendar Strip* (Allows quick day jumping).
 
-### 3.6 Payment & Khata Ledger (Receivables Tracker)
-* **Transaction Fields:**
-  * Customer, Bill/Invoice Reference (optional), Total Amount (₹), Paid Amount (₹), Balance Pending (₹ = Total - Paid).
-  * Payment Mode: `UPI (GPay/PhonePe/Paytm)`, `Cash`, `Card`, `NetBanking`.
-  * Status: `PAID`, `PARTIALLY_PAID`, `PENDING`, `REFUNDED`.
-* **Khata Summary:** Calculates merchant-wide and customer-specific outstanding credit.
-* **One-Tap Payment Reminder:** Pre-drafted WhatsApp template including the customer's exact pending amount and shop's UPI ID / phone number.
+### 4.6 Payment & Khata Ledger (`/payments`)
+* **Data Fields:** `customer_id`, `reference_id` (e.g. Bill #104), `total_amount`, `paid_amount`, `pending_amount` (calculated: `total - paid`), `payment_method` (`UPI`, `CASH`, `CARD`, `OTHER`), `status` (`PAID`, `PARTIALLY_PAID`, `PENDING`, `REFUNDED`).
+* **UPI Deep-Link / Payment Reminder Generation:**
+  * Auto-generates a WhatsApp message containing the business's UPI ID (VPA) and the pending balance amount.
 
-### 3.7 WhatsApp Deep-Link & Template Engine
-* **Deep-Link Protocol:**
-  * Standard URL format: `https://wa.me/91<PHONE_NUMBER>?text=<URL_ENCODED_MESSAGE>`
-  * Web fallback for desktop browsers: `https://web.whatsapp.com/send?phone=91<PHONE_NUMBER>&text=<URL_ENCODED_MESSAGE>`
-* **Indian Phone Number Sanitization Engine:**
-  * Strips spaces, dashes, parentheses, leading zeros, and existing `+91` or `91` prefixes.
-  * Validates standard Indian 10-digit mobile range: `/^[6-9]\d{9}$/`.
-* **Dynamic Template Interpolation:**
-  * Supports variables: `{{customer_name}}`, `{{business_name}}`, `{{appointment_date}}`, `{{appointment_time}}`, `{{service_name}}`, `{{amount}}`, `{{pending_amount}}`, `{{owner_phone}}`.
-* **Out-of-the-Box Indian Service Templates:**
-  1. *Appointment Reminder:* "Hi {{customer_name}}, this is a friendly reminder from {{business_name}} regarding your appointment for {{service_name}} on {{appointment_date}} at {{appointment_time}}. See you soon!"
-  2. *Follow-Up / Re-engagement:* "Hello {{customer_name}}! It has been a while since your last visit to {{business_name}}. Would you like to schedule a slot this week? Reply here to book!"
-  3. *Payment Khata Reminder:* "Dear {{customer_name}}, gentle reminder from {{business_name}}: pending balance of ₹{{pending_amount}} is due. You can pay via UPI to {{owner_phone}}. Thank you!"
-  4. *Post-Service Thank You:* "Hi {{customer_name}}, thank you for visiting {{business_name}} today! Let us know if you need anything else. Have a great day!"
-
-### 3.8 Subscription & Monetization (Razorpay)
-* **Tier Structure:**
-  * **Free:** ₹0/mo — Up to 50 customers, basic follow-ups, standard dashboard.
-  * **Starter:** ₹299/mo — Up to 500 customers, unlimited follow-ups, appointments, payments, WhatsApp templates, CSV import/export.
-  * **Business:** ₹699/mo — Unlimited customers, up to 5 staff members, analytics, custom templates, priority WhatsApp support.
-  * **Pro:** ₹1,499/mo — Multi-branch support, unlimited staff, full export & webhook access.
-* **Billing Gateway:** Razorpay Subscriptions (Recurring UPI Autopay, Debit/Credit Card, Netbanking).
-* **Grace Period & Degradation:** 3-day payment grace period before tenant enters read-only mode for excess records.
+### 4.7 WhatsApp Deep-Link & Message Template Engine
+* **Normalization Logic:**
+  * Indian mobile inputs can vary (`9823012345`, `09823012345`, `+91 98230 12345`, `91-9823012345`).
+  * System regex parses and cleans input to strict 12-digit format: `91XXXXXXXXXX`.
+* **Deep Link Formats:**
+  * Mobile Browser: `whatsapp://send?phone=91XXXXXXXXXX&text=URL_ENCODED_MESSAGE` (with fallback to `https://wa.me/91XXXXXXXXXX?text=URL_ENCODED_MESSAGE`).
+  * Desktop Browser: `https://web.whatsapp.com/send?phone=91XXXXXXXXXX&text=URL_ENCODED_MESSAGE`.
+* **Default Template Catalog:**
+  1. *Appointment Reminder:*
+     ```text
+     Namaste {{customer_name}}! Reminder from {{business_name}}: Your appointment for {{service_name}} is booked for {{appointment_date}} at {{appointment_time}}. Please reach 5 minutes early. See you!
+     ```
+  2. *Payment / Khata Follow-up:*
+     ```text
+     Hello {{customer_name}}, this is a friendly reminder from {{business_name}}. You have a pending balance of ₹{{pending_amount}} for your recent visit. Kindly clear it via UPI to {{business_upi}}. Thank you!
+     ```
+  3. *Re-engagement / Service Due:*
+     ```text
+     Hi {{customer_name}}, it has been a month since your last visit at {{business_name}}. Would you like to schedule your next session this week? Reply here to book your slot!
+     ```
 
 ---
 
-## 4. Technical Architecture
+## 5. Technical Architecture & Data Model
 
-### 4.1 System Overview
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 Client (Mobile Web PWA / Browser)            │
-│               Next.js 16 App Router (React 19)              │
-│               Tailwind CSS v4 + Lucide Icons                │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ HTTPS / Server Actions & API
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Next.js Edge / Node Server                 │
-│  ┌─────────────────────────┐   ┌─────────────────────────┐  │
-│  │    Tenant Auth Middleware│   │    Input Validation     │  │
-│  │    (Session + Org ID)   │   │     (Zod Schemas)       │  │
-│  └────────────┬────────────┘   └────────────┬────────────┘  │
-└───────────────┼─────────────────────────────┼───────────────┘
-                │                             │
-                ▼                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Data & Service Layer                      │
-│   Prisma ORM (Connection Pool)                              │
-│   PostgreSQL (Multi-tenant schema with organization_id)     │
-│   Redis (Upstash for Rate Limiting & Background Jobs)       │
-└─────────────────────────────────────────────────────────────┘
+### 5.1 System Architecture
+
+```mermaid
+graph TD
+    Client["Client: Mobile Browser / PWA (Next.js 16 + React 19)"]
+    
+    subgraph Edge_Vercel["Next.js Server / Vercel Edge"]
+        Middleware["Tenant & Auth Middleware (RBAC + Org Check)"]
+        ServerActions["Next.js Server Actions & API Route Handlers"]
+    end
+
+    subgraph Data_Layer["Database & Cache Layer"]
+        Prisma["Prisma ORM (Tenant Scoped Client)"]
+        Postgres[(PostgreSQL 16 Multi-tenant DB)]
+        Redis[(Upstash Redis: Rate Limiting & Jobs)]
+    end
+
+    subgraph External_Services["Third-Party Services"]
+        WA["WhatsApp Client (Direct wa.me Deep Links)"]
+        Razorpay["Razorpay API (Subscriptions & Webhooks)"]
+        Sentry["Sentry (Error & Perf Monitoring)"]
+    end
+
+    Client -->|HTTPS / Session Cookie| Middleware
+    Middleware --> ServerActions
+    ServerActions --> Prisma
+    Prisma --> Postgres
+    ServerActions --> Redis
+    ServerActions --> Razorpay
+    Client -.->|1-Tap Direct Intent| WA
+    Razorpay -.->|Webhooks /api/webhooks/razorpay| ServerActions
+    ServerActions -.-> Sentry
 ```
 
-### 4.2 Database Schema (Prisma)
+### 5.2 Multi-Tenant Data Schema (`schema.prisma`)
 
 ```prisma
 datasource db {
@@ -193,28 +258,16 @@ generator client {
 enum Role {
   OWNER
   ADMIN
-  STAFF
-}
-
-enum CustomerStatus {
-  NEW
-  CONTACTED
-  INTERESTED
-  BOOKED
-  ACTIVE
-  COMPLETED
-  FOLLOW_UP
-  LOST
+  EMPLOYEE
 }
 
 enum Priority {
   LOW
   MEDIUM
   HIGH
-  URGENT
 }
 
-enum FollowupStatus {
+enum FollowUpStatus {
   PENDING
   COMPLETED
   CANCELLED
@@ -237,10 +290,10 @@ enum PaymentStatus {
 }
 
 enum PaymentMethod {
-  CASH
   UPI
+  CASH
   CARD
-  NETBANKING
+  BANK_TRANSFER
   OTHER
 }
 
@@ -252,475 +305,429 @@ enum SubscriptionTier {
 }
 
 enum SubscriptionStatus {
-  TRIAL
   ACTIVE
+  TRIALING
   PAST_DUE
   CANCELLED
-  EXPIRED
 }
+
+// -------------------------------------------------------------
+// 1. TENANT & USER MODELS
+// -------------------------------------------------------------
 
 model Organization {
   id              String             @id @default(cuid())
   name            String
   slug            String             @unique
-  category        String             // Salon, Clinic, Tailor, etc.
-  phone           String
-  city            String?
+  category        String             // e.g. "Salon", "Repair", "Tutor"
+  city            String
+  phone           String?
+  upiId           String?            // e.g. rahul@okhdfcbank
   logoUrl         String?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
   members         OrganizationMember[]
   customers       Customer[]
-  followups       Followup[]
+  followups       FollowUp[]
   appointments    Appointment[]
   payments        Payment[]
   templates       MessageTemplate[]
-  subscription    Subscription?
+  subscriptions   Subscription[]
+  notifications   Notification[]
 
   @@index([slug])
 }
 
 model User {
-  id            String               @id @default(cuid())
-  name          String
-  email         String               @unique
-  passwordHash  String
-  phone         String?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  id              String             @id @default(cuid())
+  email           String             @unique
+  passwordHash    String
+  fullName        String
+  phone           String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
-  memberships   OrganizationMember[]
-  assignedFollowups   Followup[]     @relation("AssignedFollowups")
-  assignedAppointments Appointment[] @relation("AssignedAppointments")
+  memberships     OrganizationMember[]
+  assignedAppointments Appointment[] @relation("AssignedStaff")
 }
 
 model OrganizationMember {
-  id              String       @id @default(cuid())
+  id              String             @id @default(cuid())
   organizationId  String
   userId          String
-  role            Role         @default(STAFF)
-  createdAt       DateTime     @default(now())
+  role            Role               @default(EMPLOYEE)
+  createdAt       DateTime           @default(now())
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
   @@index([organizationId])
 }
 
+// -------------------------------------------------------------
+// 2. CRM CORE: CUSTOMERS & INTERACTIONS
+// -------------------------------------------------------------
+
 model Customer {
-  id              String         @id @default(cuid())
+  id              String             @id @default(cuid())
   organizationId  String
   name            String
-  phone           String         // Stored as 10 digits without prefix e.g. 9876543210
+  phone           String             // Normalized: 91XXXXXXXXXX
   email           String?
-  status          CustomerStatus @default(NEW)
-  notes           String?
-  tags            String[]       @default([])
-  totalSpent      Decimal        @default(0.0) @db.Decimal(10, 2)
-  pendingBalance  Decimal        @default(0.0) @db.Decimal(10, 2)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  status          String             @default("Active") // Active, Booked, Inactive, Lost
+  totalSpent      Decimal            @default(0.00) @db.Decimal(10, 2)
+  pendingBalance  Decimal            @default(0.00) @db.Decimal(10, 2)
+  tags            String[]           @default([])
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
-  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  followups       Followup[]
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  notes           CustomerNote[]
+  interactions    CustomerInteraction[]
+  followups       FollowUp[]
   appointments    Appointment[]
   payments        Payment[]
-  timeline        ActivityLog[]
 
-  @@unique([organizationId, phone])
-  @@index([organizationId, status])
-  @@index([organizationId, name])
   @@index([organizationId, phone])
+  @@index([organizationId, name])
+  @@index([organizationId, status])
 }
 
-model Followup {
-  id              String         @id @default(cuid())
-  organizationId  String
+model CustomerNote {
+  id              String             @id @default(cuid())
   customerId      String
-  assignedToId    String?
-  title           String
-  notes           String?
-  dueDate         DateTime
-  priority        Priority       @default(MEDIUM)
-  status          FollowupStatus @default(PENDING)
-  completedAt     DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  authorName      String
+  content         String             @db.Text
+  createdAt       DateTime           @default(now())
 
-  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customer        Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  assignedTo      User?          @relation("AssignedFollowups", fields: [assignedToId], references: [id], onDelete: SetNull)
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId, status, dueDate])
   @@index([customerId])
 }
 
-model Appointment {
-  id              String            @id @default(cuid())
-  organizationId  String
+model CustomerInteraction {
+  id              String             @id @default(cuid())
   customerId      String
-  assignedToId    String?
-  serviceName     String
-  startTime       DateTime
-  endTime         DateTime?
-  price           Decimal           @default(0.0) @db.Decimal(10, 2)
-  status          AppointmentStatus @default(SCHEDULED)
-  notes           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  assignedTo      User?             @relation("AssignedAppointments", fields: [assignedToId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, startTime])
-  @@index([customerId])
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  organizationId  String
-  customerId      String
-  invoiceNumber   String?
-  totalAmount     Decimal       @db.Decimal(10, 2)
-  paidAmount      Decimal       @db.Decimal(10, 2)
-  pendingAmount   Decimal       @db.Decimal(10, 2)
-  status          PaymentStatus @default(PAID)
-  paymentMethod   PaymentMethod @default(UPI)
-  notes           String?
-  paidAt          DateTime      @default(now())
-  createdAt       DateTime      @default(now())
-
-  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId, paidAt])
-  @@index([customerId])
-}
-
-model MessageTemplate {
-  id              String       @id @default(cuid())
-  organizationId  String
-  title           String       // e.g. "Appointment Reminder"
-  category        String       // REMINDER, KHATA, FOLLOWUP, PROMO
-  body            String       // e.g. "Hi {{customer_name}}, your appointment at {{business_name}}..."
-  isDefault       Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId, category])
-}
-
-model ActivityLog {
-  id              String       @id @default(cuid())
-  organizationId  String
-  customerId      String
-  actionType      String       // CREATED, FOLLOWUP_SET, PAYMENT_RECEIVED, NOTE_ADDED, WHATSAPP_SENT
-  description     String
+  type            String             // "WHATSAPP_SENT", "CALL_MADE", "NOTE_ADDED", "VISITED"
+  summary         String
   metadata        Json?
-  createdAt       DateTime     @default(now())
+  createdAt       DateTime           @default(now())
 
-  customer        Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId, createdAt])
 }
 
+// -------------------------------------------------------------
+// 3. FOLLOW-UPS, APPOINTMENTS, & PAYMENTS
+// -------------------------------------------------------------
+
+model FollowUp {
+  id              String             @id @default(cuid())
+  organizationId  String
+  customerId      String
+  title           String
+  notes           String?            @db.Text
+  scheduledAt     DateTime
+  priority        Priority           @default(MEDIUM)
+  status          FollowUpStatus     @default(PENDING)
+  completedAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, scheduledAt, status])
+  @@index([customerId])
+}
+
+model Appointment {
+  id              String             @id @default(cuid())
+  organizationId  String
+  customerId      String
+  assignedStaffId String?
+  serviceName     String
+  startTime       DateTime
+  endTime         DateTime
+  price           Decimal?           @db.Decimal(10, 2)
+  status          AppointmentStatus  @default(SCHEDULED)
+  notes           String?            @db.Text
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedStaff   User?              @relation("AssignedStaff", fields: [assignedStaffId], references: [id])
+
+  @@index([organizationId, startTime, status])
+  @@index([customerId])
+}
+
+model Payment {
+  id              String             @id @default(cuid())
+  organizationId  String
+  customerId      String
+  billNumber      String?
+  totalAmount     Decimal            @db.Decimal(10, 2)
+  paidAmount      Decimal            @db.Decimal(10, 2)
+  pendingAmount   Decimal            @db.Decimal(10, 2)
+  method          PaymentMethod      @default(UPI)
+  status          PaymentStatus      @default(PENDING)
+  notes           String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([customerId])
+}
+
+// -------------------------------------------------------------
+// 4. TEMPLATES, BILLING & NOTIFICATIONS
+// -------------------------------------------------------------
+
+model MessageTemplate {
+  id              String             @id @default(cuid())
+  organizationId  String
+  title           String             // e.g. "Appointment 1h Reminder"
+  category        String             // "APPOINTMENT", "PAYMENT", "MARKETING"
+  body            String             @db.Text
+  isDefault       Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, category])
+}
+
 model Subscription {
-  id                   String             @id @default(cuid())
-  organizationId       String             @unique
-  tier                 SubscriptionTier   @default(FREE)
-  status               SubscriptionStatus @default(TRIAL)
-  razorpayCustomerId   String?
-  razorpaySubId        String?
-  currentPeriodStart   DateTime           @default(now())
-  currentPeriodEnd     DateTime
-  cancelAtPeriodEnd    Boolean            @default(false)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  id              String             @id @default(cuid())
+  organizationId  String
+  tier            SubscriptionTier   @default(FREE)
+  status          SubscriptionStatus @default(TRIALING)
+  razorpaySubId   String?            @unique
+  razorpayPlanId  String?
+  currentPeriodEnd DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
-  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model Notification {
+  id              String             @id @default(cuid())
+  organizationId  String
+  title           String
+  message         String
+  link            String?
+  isRead          Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isRead])
 }
 ```
 
 ---
 
-## 5. Security & Multi-Tenancy Architecture
+## 6. Core Logic Implementations
 
-### 5.1 Absolute Tenant Isolation
-Every query accessing database models **MUST** enforce the `organizationId` predicate matching the authenticated session.
+### 6.1 Indian Phone Number Sanitizer & WhatsApp URL Builder
+In India, mobile numbers may be typed with spaces, dashes, leading `0`, or `+91`. The CRM must normalize this to RFC-compliant E.164 without symbols.
+
 ```typescript
-// Tenant Safe Query Utility Example
-export async function getTenantCustomer(orgId: string, customerId: string) {
-  return await prisma.customer.findFirst({
-    where: {
-      id: customerId,
-      organizationId: orgId, // CRITICAL: NEVER omit organizationId
-    },
-    include: {
-      followups: { orderBy: { dueDate: 'asc' } },
-      appointments: { orderBy: { startTime: 'desc' }, take: 10 },
-      payments: { orderBy: { paidAt: 'desc' }, take: 10 },
-    }
-  });
-}
-```
+// lib/whatsapp.ts
+export function normalizeIndianPhoneNumber(input: string): string | null {
+  // 1. Strip all non-digit characters
+  const digits = input.replace(/\D/g, "");
 
-### 5.2 Role-Based Access Matrix (RBAC)
-| Resource / Action | OWNER | ADMIN | STAFF |
-|---|:---:|:---:|:---:|
-| View Customers & History | Yes | Yes | Yes |
-| Create / Edit Customers | Yes | Yes | Yes |
-| Delete / Archive Customer | Yes | Yes | No |
-| Create / Complete Follow-up | Yes | Yes | Yes |
-| Manage Appointments | Yes | Yes | Yes |
-| Log Payments & Khata | Yes | Yes | Yes |
-| View Financial Aggregates / Revenue | Yes | Yes | No (Only counts) |
-| Invite / Manage Staff | Yes | Yes | No |
-| Change Subscription / Billing | Yes | No | No |
-
----
-
-## 6. Utilities & WhatsApp Integration Engine
-
-### 6.1 Indian Phone Number Normalization (`lib/phone.ts`)
-```typescript
-/**
- * Normalizes Indian mobile phone numbers into clean 10 digits
- * Accepts: "+91 98765 43210", "09876543210", "98765-43210", "919876543210"
- * Returns: "9876543210" or null if invalid
- */
-export function normalizeIndianPhone(input: string): string | null {
-  if (!input) return null;
-  const digits = input.replace(/\D/g, '');
-  
+  // 2. Handle 10-digit standard Indian format: 9823012345 -> 919823012345
   if (digits.length === 10 && /^[6-9]\d{9}$/.test(digits)) {
+    return `91${digits}`;
+  }
+
+  // 3. Handle 11-digit leading zero format: 09823012345 -> 919823012345
+  if (digits.length === 11 && digits.startsWith("0") && /^[6-9]\d{9}$/.test(digits.slice(1))) {
+    return `91${digits.slice(1)}`;
+  }
+
+  // 4. Handle 12-digit with 91 prefix: 919823012345
+  if (digits.length === 12 && digits.startsWith("91") && /^[6-9]\d{9}$/.test(digits.slice(2))) {
     return digits;
   }
-  if (digits.length === 11 && digits.startsWith('0')) {
-    const sliced = digits.slice(1);
-    if (/^[6-9]\d{9}$/.test(sliced)) return sliced;
-  }
-  if (digits.length === 12 && digits.startsWith('91')) {
-    const sliced = digits.slice(2);
-    if (/^[6-9]\d{9}$/.test(sliced)) return sliced;
-  }
-  return null;
-}
 
-export function formatIndianPhoneDisplay(tenDigits: string): string {
-  if (tenDigits.length !== 10) return tenDigits;
-  return `+91 ${tenDigits.slice(0, 5)} ${tenDigits.slice(5)}`;
-}
-```
-
-### 6.2 WhatsApp Deep Link Generator (`lib/whatsapp.ts`)
-```typescript
-import { normalizeIndianPhone } from './phone';
-
-interface TemplateParams {
-  customer_name?: string;
-  business_name?: string;
-  appointment_date?: string;
-  appointment_time?: string;
-  service_name?: string;
-  amount?: string;
-  pending_amount?: string;
-  owner_phone?: string;
-}
-
-export function compileTemplate(templateBody: string, params: TemplateParams): string {
-  return templateBody.replace(/{{\s*(\w+)\s*}}/g, (_, key: keyof TemplateParams) => {
-    return params[key] ?? '';
-  });
+  return null; // Invalid Indian mobile number
 }
 
 export function generateWhatsAppLink(phone: string, message: string): string {
-  const cleanPhone = normalizeIndianPhone(phone);
-  if (!cleanPhone) throw new Error('Invalid Indian phone number');
-  const encodedMessage = encodeURIComponent(message.trim());
-  return `https://wa.me/91${cleanPhone}?text=${encodedMessage}`;
+  const normalizedPhone = normalizeIndianPhoneNumber(phone);
+  if (!normalizedPhone) {
+    throw new Error("Invalid phone number format for WhatsApp");
+  }
+  const encodedText = encodeURIComponent(message);
+  return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
+}
+
+export function interpolateTemplate(
+  templateBody: string,
+  variables: Record<string, string | number>
+): string {
+  return templateBody.replace(/{{\s*(\w+)\s*}}/g, (_, key) => {
+    return variables[key] !== undefined ? String(variables[key]) : `{{${key}}}`;
+  });
+}
+```
+
+### 6.2 Multi-Tenant Database Scoping (Prisma Client Extension)
+To make tenant isolation mathematically foolproof, all tenant-level queries pass through an organization context wrapper:
+
+```typescript
+// lib/prisma.ts
+import { PrismaClient } from "@prisma/client";
+
+export const prisma = new PrismaClient();
+
+// Enforce organizationId on all queries via context
+export function createTenantClient(organizationId: string) {
+  return prisma.$extends({
+    query: {
+      customer: {
+        async $allOperations({ operation, args, query }) {
+          if (["findMany", "findFirst", "count", "aggregate"].includes(operation)) {
+            (args as any).where = { ...(args as any).where, organizationId };
+          }
+          return query(args);
+        },
+      },
+      followUp: {
+        async $allOperations({ operation, args, query }) {
+          if (["findMany", "findFirst", "count", "aggregate"].includes(operation)) {
+            (args as any).where = { ...(args as any).where, organizationId };
+          }
+          return query(args);
+        },
+      },
+    },
+  });
 }
 ```
 
 ---
 
-## 7. API Surface & Contract Specifications
+## 7. REST & Server Actions API Contracts
 
 ### 7.1 Customer Endpoints
-* **`GET /api/customers`**
-  * *Query Params:* `search`, `status`, `page`, `limit`
-  * *Response 200:* `{ customers: Customer[], totalCount: number, page: number }`
-* **`POST /api/customers`**
-  * *Body (Zod):* `{ name: string, phone: string, email?: string, notes?: string, status?: CustomerStatus }`
-  * *Response 201:* `{ customer: Customer }`
-* **`GET /api/customers/:id`**
-  * *Response 200:* `{ customer: CustomerWithRelations }`
-* **`PATCH /api/customers/:id`**
-  * *Body:* Partial customer update.
-* **`POST /api/customers/import`**
-  * *Body:* `{ customers: Array<{ name: string, phone: string, notes?: string, pendingBalance?: number }> }`
-  * *Response 200:* `{ inserted: number, skipped: number, errors: string[] }`
+* `GET /api/customers?query=rahul&status=Active&page=1&limit=25`
+  * Response: `{ data: Customer[], total: number, page: number, totalPages: number }`
+* `POST /api/customers`
+  * Body: `{ name: string, phone: string, email?: string, tags?: string[] }`
+  * Returns: `201 Created` with created `Customer` object
+* `GET /api/customers/:id`
+  * Returns full 360 view with populated `followups`, `appointments`, `payments`, and `notes`.
+* `POST /api/customers/import-csv`
+  * Accepts `multipart/form-data` with CSV file.
+  * Validates headers: `name, phone, status, notes`.
+  * Returns summary: `{ importedCount: 45, skippedCount: 2, errors: [...] }`
 
 ### 7.2 Follow-Up Endpoints
-* **`GET /api/followups`**
-  * *Query Params:* `status` (`PENDING` | `COMPLETED`), `due` (`today` | `overdue` | `upcoming`)
-  * *Response 200:* `{ followups: FollowupWithCustomer[] }`
-* **`POST /api/followups`**
-  * *Body (Zod):* `{ customerId: string, title: string, dueDate: ISOString, priority?: Priority, notes?: string }`
-  * *Response 201:* `{ followup: Followup }`
-* **`PATCH /api/followups/:id`**
-  * *Body:* `{ status: FollowupStatus, completedAt?: ISOString, notes?: string }`
+* `GET /api/followups?date=today&status=PENDING`
+* `POST /api/followups`
+  * Body: `{ customerId: string, title: string, scheduledAt: string, priority: "LOW"|"MEDIUM"|"HIGH", notes?: string }`
+* `PATCH /api/followups/:id/complete`
+  * Sets `status = "COMPLETED"`, `completedAt = now()`.
+  * Automatically creates an entry in `CustomerInteraction` timeline.
 
-### 7.3 Appointment Endpoints
-* **`GET /api/appointments`**
-  * *Query Params:* `start`, `end`, `staffId`
-* **`POST /api/appointments`**
-  * *Body:* `{ customerId: string, serviceName: string, startTime: ISOString, price?: number, assignedToId?: string }`
-
-### 7.4 Payment & Khata Endpoints
-* **`POST /api/payments`**
-  * *Body:* `{ customerId: string, totalAmount: number, paidAmount: number, paymentMethod: PaymentMethod, notes?: string }`
-  * *Side Effect:* Updates `customer.pendingBalance` and `customer.totalSpent`, inserts `ActivityLog`.
-
-### 7.5 Dashboard KPI Endpoint
-* **`GET /api/dashboard/stats`**
-  * *Response 200:*
-    ```json
-    {
-      "totalCustomers": 428,
-      "dueFollowups": 12,
-      "overdueFollowups": 3,
-      "todayAppointments": 8,
-      "pendingReceivables": 14500,
-      "revenueThisMonth": 84500
-    }
-    ```
+### 7.3 Payment & Khata Endpoints
+* `POST /api/payments`
+  * Body: `{ customerId: string, totalAmount: number, paidAmount: number, method: "UPI"|"CASH"|"CARD", notes?: string }`
+  * Automatically calculates `pendingAmount = totalAmount - paidAmount`.
+  * Atomically increments `Customer.totalSpent` and updates `Customer.pendingBalance`.
 
 ---
 
-## 8. Directory & Codebase Layout
+## 8. Subscription & Feature Limits Matrix
 
-```
-follow-up/
-├── AGENTS.md                  # Next.js 16 agent rules
-├── package.json
-├── prisma/
-│   └── schema.prisma          # Multi-tenant data model
-├── public/
-│   └── icons/                 # PWA icons & branding
-├── src/
-│   ├── app/
-│   │   ├── (auth)/
-│   │   │   ├── login/page.tsx
-│   │   │   ├── signup/page.tsx
-│   │   │   └── onboarding/page.tsx
-│   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx     # App shell with bottom nav & sidebar
-│   │   │   ├── page.tsx       # Main dashboard (KPIs + Today's Agenda)
-│   │   │   ├── customers/
-│   │   │   │   ├── page.tsx   # Customer list + Search + CSV Import
-│   │   │   │   └── [id]/page.tsx # Customer 360 profile + timeline
-│   │   │   ├── followups/page.tsx # Follow-up queue & status filter
-│   │   │   ├── appointments/page.tsx # Calendar / Daily agenda
-│   │   │   ├── payments/page.tsx  # Khata & pending dues ledger
-│   │   │   ├── templates/page.tsx # WhatsApp template management
-│   │   │   └── settings/
-│   │   │       ├── profile/page.tsx
-│   │   │       ├── billing/page.tsx # Razorpay subscription view
-│   │   │       └── team/page.tsx
-│   │   ├── api/
-│   │   │   ├── auth/[...nextauth]/route.ts
-│   │   │   ├── customers/route.ts
-│   │   │   ├── followups/route.ts
-│   │   │   ├── appointments/route.ts
-│   │   │   ├── payments/route.ts
-│   │   │   ├── webhooks/razorpay/route.ts
-│   │   │   └── dashboard/stats/route.ts
-│   │   ├── layout.tsx
-│   │   └── globals.css
-│   ├── components/
-│   │   ├── ui/                # Base primitives (Button, Dialog, Badge, Input)
-│   │   ├── dashboard/         # KPI Cards, TodayAgenda, QuickActions
-│   │   ├── customers/         # CustomerTable, CustomerDrawer, ImportModal
-│   │   ├── followups/         # FollowupCard, CreateFollowupModal
-│   │   ├── whatsapp/          # WhatsAppModal, TemplatePicker
-│   │   └── layout/            # BottomNav (Mobile), Sidebar (Desktop)
-│   ├── lib/
-│   │   ├── prisma.ts          # Singleton Prisma client
-│   │   ├── auth.ts            # Auth session helpers
-│   │   ├── phone.ts           # Indian phone normalizer
-│   │   ├── whatsapp.ts        # WhatsApp deep link & template compiler
-│   │   └── razorpay.ts        # Payment gateway wrapper
-│   └── types/
-│       └── index.ts           # Shared TypeScript interfaces
-```
+| Feature / Limit | Free Tier (₹0) | Starter (₹299 / mo) | Business (₹699 / mo) | Pro (₹1,499 / mo) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Active Customers** | Max 50 | Max 500 | Unlimited | Unlimited |
+| **Follow-up Reminders** | Unlimited | Unlimited | Unlimited | Unlimited |
+| **Staff Members** | 1 (Owner only) | 1 (Owner only) | Up to 5 staff | Unlimited |
+| **Appointments & Services** | ❌ (List only) | ✅ Full Scheduling | ✅ Full Scheduling | ✅ Multi-chair / Multi-room |
+| **Payment & Khata Tracking**| Basic | ✅ Detailed Ledger | ✅ Detailed Ledger | ✅ Advanced Khata + Statements|
+| **WhatsApp Templates** | 2 system templates | 10 custom templates | Unlimited custom | Dynamic AI Templates (v2) |
+| **CSV Import & Export** | ❌ | ✅ | ✅ | ✅ |
+| **Multi-Branch Support** | ❌ | ❌ | ❌ | ✅ Multiple locations |
 
 ---
 
-## 9. Implementation Milestones & 6-Week Execution Plan
+## 9. Security, Isolation & Compliance
+
+1. **Zero Data Leaks (Tenant Isolation):**
+   * Every query requires an authenticated session with an explicit `organizationId`.
+   * Server actions verify that the user's `OrganizationMember` record matches the target entity's `organizationId`.
+2. **Indian Digital Personal Data Protection (DPDP) Compliance:**
+   * Customer phone numbers are never exposed in public endpoints or query logs.
+   * Simple 1-click customer data purge and export on demand.
+3. **Rate Limiting:**
+   * Powered by Upstash Redis: max 60 requests/min per IP on auth routes; max 300 requests/min on data routes.
+4. **Input Sanitization:**
+   * Strict Zod schema parsing on all Server Actions and Route Handlers to eliminate XSS, prototype pollution, and SQL injection.
+
+---
+
+## 10. Implementation Plan & 6-Week Sprint Breakdown
 
 ```mermaid
 gantt
-    title FollowUp MVP Execution Roadmap
+    title FollowUp MVP Engineering Timeline
     dateFormat  YYYY-MM-DD
     section Phase 1: Foundation
-    Auth, Multi-tenancy & DB Schema       :p1, 2026-09-22, 5d
-    UI Framework & Mobile App Shell       :p1b, after p1, 2d
+    Next.js 16 Setup, Auth & Multi-tenancy :done, 2026-09-22, 4d
+    Prisma Schema & Migrations             :done, 2026-09-24, 3d
     section Phase 2: CRM Core
-    Customer CRUD & Search Filter         :p2, after p1b, 4d
-    Customer 360 Profile & Timeline       :p2b, after p2, 3d
-    CSV Import & Indian Phone Sanitizer   :p2c, after p2, 2d
-    section Phase 3: Follow-ups
-    Follow-up Engine & Overdue Tracker    :p3, after p2b, 4d
-    Dashboard KPI & Today Agenda View     :p3b, after p3, 3d
-    section Phase 4: Business Ops
-    Appointments Scheduling              :p4, after p3b, 3d
-    Payments & Khata Ledger               :p4b, after p4, 3d
-    WhatsApp Deep-Link & Templates        :p4c, after p4b, 3d
+    Customer CRUD, Search & Filters        :active, 2026-09-27, 4d
+    Customer 360 Profile & Timeline       :2026-09-30, 4d
+    section Phase 3: Follow-Up Engine
+    Follow-up CRUD & Daily Agenda Feed     :2026-10-04, 4d
+    Overdue Notifications & Quick Actions  :2026-10-07, 3d
+    section Phase 4: Ops & WhatsApp
+    WhatsApp Sanitizer & Deep-Link Gen     :2026-10-10, 3d
+    Appointments & Khata Payments Ledger   :2026-10-12, 4d
     section Phase 5: Monetization
-    Razorpay Subscription Integration     :p5, after p4c, 4d
-    Tier Limits & Upgrade Gates           :p5b, after p5, 3d
+    Razorpay Subscriptions & Webhooks      :2026-10-16, 4d
+    Paywall Enforcement & Plan Limits      :2026-10-19, 3d
     section Phase 6: Beta Pilot
-    Pilot in 10 Nagpur Salons             :p6, after p5b, 7d
+    Pilot Launch with 5 Nagpur Salons      :2026-10-22, 7d
 ```
 
-### Detailed Week-by-Week Deliverables:
-* **Week 1 (Foundation):** Setup Prisma PostgreSQL, Auth with multi-tenant session binding, responsive mobile-first UI shell with Lucide icons.
-* **Week 2 (CRM Engine):** Customers table, rapid customer creation, single customer profile, note taking, CSV import/export with phone validation.
-* **Week 3 (Follow-ups & Dashboard):** Follow-up CRUD with priority and due date alerts, overdue detection, unified dashboard with Today's Tasks.
-* **Week 4 (Appointments, Payments & WhatsApp):** Service booking calendar, payment tracker with Khata calculation, WhatsApp deep-link generation with customizable template substitutions.
-* **Week 5 (Monetization & Polish):** Razorpay subscription checkout, customer limit guardrails (Free: 50, Starter: 500, Business: Unlimited), PWA offline caching manifest.
-* **Week 6 (Hyper-local Pilot):** In-person deployment with 10 local service shops in Nagpur. Daily feedback iteration on UX friction.
+### Sprint Detail
+* **Week 1 (Foundation):** Set up project structure, Auth.js/session management, multi-tenant middleware, Shadcn UI primitives, database migrations.
+* **Week 2 (CRM Core):** Customer table, mobile responsive search, CSV importer, Customer 360 profile with timeline.
+* **Week 3 (Follow-ups):** Follow-up scheduler, Today's Tasks list on Dashboard, priority badges, completion modals.
+* **Week 4 (Ops & WhatsApp Engine):** Appointments calendar, Payment record modal, WhatsApp variable substitution engine, 1-tap `wa.me` links.
+* **Week 5 (Monetization & Razorpay):** Customer limit guardrails, Razorpay webhook handlers, upgrade banner, billing portal.
+* **Week 6 (Hyper-Local Beta Pilot):** Field testing with 5–10 real barbers/salons in Nagpur; UX optimization based on real usage.
 
 ---
 
-## 10. Go-to-Market & Validation Strategy
+## 11. Hyper-Local Go-To-Market Playbook
 
-### 10.1 The "One City, One Vertical" Playbook
-* **Niche:** Salons and Barbershops.
-* **City:** Nagpur, Maharashtra.
-* **Cold Outreach Funnel:**
-  * Walk into 25 salons during slow hours (12:00 PM – 3:00 PM on weekdays).
-  * 30-second hook: *"Bhaiya, WhatsApp pe kitne customers aate hain jinka follow-up bhul jate ho? Ye dekho 1-click me unko reminder chala jata hai."*
-  * Live demo on the owner's phone (takes 60 seconds).
-  * Offer 14-day free pilot with personal setup assistance (importing their contacts).
-* **Validation Milestone:**
-  * Goal: 10 active shops using the app daily.
-  * Milestone Proof: 3 shops paying ₹299/mo voluntarily when their trial ends.
-
----
-
-## 11. Definition of Done (DoD) Checklist
-
-- [ ] Multi-tenant isolation verified: User A from Org 1 cannot fetch `/api/customers/:id` from Org 2 under any circumstance.
-- [ ] Indian phone numbers correctly validated and formatted across all entry points.
-- [ ] One-tap `[WhatsApp]` button correctly opens native WhatsApp app on Android/iOS with populated message.
-- [ ] Follow-up reminders appear chronologically in Today's Tasks and display overdue status when elapsed.
-- [ ] Khata ledger accurately computes total spent and remaining pending balance.
-- [ ] CSV import can ingest 200+ contacts without timing out.
-- [ ] Mobile PWA layout functions smoothly without horizontal layout shifting or cramped touch targets.
-- [ ] Razorpay webhook processes subscription renewals and upgrades seamlessly.
+### 11.1 The "Nagpur Pilot" Strategy
+* **Direct Merchant Outreach:**
+  * Visit 20 high-footfall salons in Dharampeth, Sadar, and Sitabuldi (Nagpur).
+  * Give a 90-second on-phone demo: *"Bhaiya, customer ko WhatsApp bhejne mein kitna time lagta hai? Yeh dekho 1-click reminder."*
+* **The "No-Risk" Offer:**
+  * 14 days free full-featured access.
+  * Developer personally helps format and import their contacts list from Google Contacts or Excel.
+* **The First Milestone:**
+  * 10 businesses using the tool for their daily follow-up routine.
+  * 3 businesses paying ₹299/mo via Razorpay UPI Autopay.
